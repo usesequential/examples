@@ -91,4 +91,4 @@ Questions: hello@usesequential.com
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](../LICENSE).
