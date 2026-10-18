@@ -1,0 +1,27 @@
+{
+  "name": "sequential-nextjs-example",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Sequential session replay and product analytics in a Next.js App Router app.",
+  "license": "MIT",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "next": "15.5.26",
+    "react": "19.2.8",
+    "react-dom": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/node": "22.20.4",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.7",
+    "typescript": "5.9.3"
+  },
+  "engines": {
+    "node": ">=18.18.0"
+  }
+}
