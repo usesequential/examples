@@ -1,60 +1,70 @@
 # Install Sequential with Google Tag Manager
 
-You can add Sequential to your site with Google Tag Manager (GTM). You do not need to change the code of your site. You paste the Sequential snippet into a **Custom HTML** tag, and GTM adds it to every page.
+You can add Sequential to your site with Google Tag Manager (GTM). You do not need to change the code of your site. You paste the GTM version of the Sequential snippet into a **Custom HTML** tag, and GTM adds it to every page.
 
 The snippet loads the Sequential SDK. The SDK sends analytics events and, when session replay is on for your project, it records sessions.
+
+You can also use the [Sequential tag template](#or-use-the-sequential-tag-template) in place of a Custom HTML tag.
 
 ## Before you start
 
 - You have a GTM web container on your site, and you can publish it.
 - You have a Sequential project.
-- You have the install snippet of the project. Open **Settings → Projects → your project → Setup**. The snippet there already contains your project key and your API host.
+- You have the project key and the API host of the project. Open **Settings → Projects → your project → Setup**. The install snippet there contains them: the project key is the `data-key` value, and the API host is the `data-api` value.
 
-## The snippet
+## The snippet for GTM
 
-This is the snippet. The snippet on your **Setup** page is the same, but with your values in `data-key` and `data-api`.
+Do not paste the snippet from your **Setup** page into GTM unchanged. A Custom HTML tag does not add your `<script>` tags to the page as you wrote them. GTM makes a new `<script>` tag that keeps only some attributes, such as `src` and `async`. The `data-key` and `data-api` attributes are lost, and the SDK writes "the script tag has no data-key" in the console and sends no events.
+
+So in GTM, the snippet gives the settings to the SDK in `window.sequentialConfig`, before the SDK loads. This is the GTM version of the snippet:
 
 ```html
-<!-- Sequential · analytics and session replay -->
+<!-- Sequential · analytics and session replay (Google Tag Manager) -->
 <script>
+window.sequentialConfig = {
+  key: "sq_sequential_...",
+  api: "https://api.usesequential.com"
+};
 (function(w){if(w.sequential)return;var q=[],s=w.sequential={_q:q},
 m=['capture','identify','account','register','unregister','reset','optOut','optIn','captureException'];
 for(var i=0;i<m.length;i++)(function(n){s[n]=function(){q.push([n,arguments])}})(m[i]);
 s.flush=function(){q.push(['flush',arguments]);return typeof Promise=='function'?Promise.resolve():{then:function(f){if(f)f()}}}})(window);
 </script>
-<!-- Optional: add data-release="<your app version>" to the tag below to put the build on every event. -->
-<script async src="https://cdn.usesequential.com/sdk/sequential/v1/sequential.js"
-        data-key="sq_sequential_..."
-        data-api="https://api.usesequential.com"></script>
+<script async src="https://cdn.usesequential.com/sdk/sequential/v1/sequential.js"></script>
 ```
 
-| Attribute | Required | What it is |
+| Setting | Required | What it is |
 |---|---|---|
-| `data-key` | Yes | The project's Sequential ingest key. It starts with `sq_sequential_`. |
-| `data-api` | Yes | The host that receives your events. On the hosted service, this is `https://api.usesequential.com`. |
-| `data-release` | No | The version of your app. Sequential puts it on every event. |
+| `key` | Yes | The project's Sequential ingest key: the `data-key` value from your **Setup** page. It starts with `sq_sequential_`. |
+| `api` | Yes | The host that receives your events: the `data-api` value from your **Setup** page. On the hosted service, this is `https://api.usesequential.com`. It must be an `https://` address with no path. |
+| `release` | No | The version of your app. Sequential puts it on every event. See [Add your app version](#add-your-app-version). |
 
-There is no `init()` call. The SDK reads its settings only from these attributes on its `<script>` tag. Do not remove them, and do not move them to another tag.
+There is no `init()` call. When the SDK's own `<script>` tag has no `data-key`, the SDK reads `key`, `api` and `release` from `window.sequentialConfig`, one time, when it loads. It reads no other settings from it. Keep `window.sequentialConfig` above the SDK's `<script>` tag.
 
-The first `<script>` block is a small queue. If your site calls `sequential.capture(...)` or another method before the SDK loads, the queue keeps the call. The SDK runs the call when it loads. Keep this block above the second tag.
+The rest of the first `<script>` block is a small queue. If your site calls `sequential.capture(...)` or another method before the SDK loads, the queue keeps the call. The SDK runs the call when it loads.
 
 ## Add the tag
 
 1. In GTM, open your container and click **Tags → New**.
 2. Name the tag, for example `Sequential`.
 3. Click **Tag Configuration** and select **Custom HTML**.
-4. Copy the snippet from your **Setup** page and paste it into the **HTML** field. Do not change it.
-5. Leave **Support document.write** off. The snippet does not use `document.write`.
-6. Open **Advanced Settings → Tag firing options** and select **Once per page**. A second copy of the SDK on the same page can send each event two times.
-7. Click **Triggering** and select a trigger:
+4. Copy the [snippet for GTM](#the-snippet-for-gtm) from this page and paste it into the **HTML** field. Replace the `key` and `api` values with the `data-key` and `data-api` values from your **Setup** page.
+5. Open **Advanced Settings → Tag firing options** and select **Once per page**. A second copy of the SDK on the same page can send each event two times.
+6. Click **Triggering** and select a trigger:
    - **Initialization - All Pages**. The tag fires before most other tags, so Sequential starts early on each page. Use this trigger if you do not need consent first.
    - **All Pages**. The tag fires on the page view. This is also correct.
    - If your site must get consent first, use a consent trigger in place of these. See [Fire the tag only after consent](#fire-the-tag-only-after-consent).
-8. Click **Save**.
+7. Click **Save**.
 
 Use one trigger that fires once per page load. Do not add a **History Change** trigger for a single-page app. The SDK follows the navigation in your app by itself.
 
 If your site already has the Sequential snippet in its HTML, do not add the GTM tag too. Use one of the two.
+
+## Or use the Sequential tag template
+
+The [Sequential tag template](https://github.com/usesequential/gtm-template) is a GTM tag with fields for the project key, the API host and the app version. It sets `window.sequentialConfig` and loads the SDK for you, so you do not paste a snippet. Until the template is in the Community Template Gallery, import it by hand. Its README tells you how.
+
+The template has no queue: `window.sequential` exists only after the SDK has loaded. If your site calls the SDK before it loads, use the Custom HTML tag on this page.
 
 ## Check the tag in Preview mode
 
@@ -64,9 +74,11 @@ If your site already has the Sequential snippet in its HTML, do not add the GTM 
 4. Make sure that the `Sequential` tag is under **Tags Fired**. If it is under **Tags Not Fired**, examine the trigger.
 5. In the window of your site, open the developer tools of your browser.
 6. Open **Console**. Look for lines that start with `[sequential]`:
-   - "the script tag has no data-key" or a missing `data-api`: an attribute is missing. Copy the snippet from **Setup** again.
+   - "the script tag has no data-key": the SDK did not get its settings. Use the [snippet for GTM](#the-snippet-for-gtm), not the snippet from **Setup** unchanged, and keep `window.sequentialConfig` above the SDK's `<script>` tag.
+   - "window.sequentialConfig has no key" or "window.sequentialConfig.key is not a Sequential ingest key": copy the `data-key` value from **Setup** into `key` again.
+   - "window.sequentialConfig.api must be an https:// origin" or "the script tag has no data-api": copy the `data-api` value from **Setup** into `api` again.
    - "data-release is not a release": the release value is not correct. See [Add your app version](#add-your-app-version).
-7. Open **Network** and filter by your `data-api` host. Requests that get `200` or `204` are accepted. For each other status, see [Check your install](https://www.usesequential.com/docs/verify).
+7. Open **Network** and filter by your API host. Requests that get `200` or `204` are accepted. For each other status, see [Check your install](https://www.usesequential.com/docs/verify).
 
 Preview mode sends real events to your project. Sequential stores them like events from any other visit.
 
@@ -84,7 +96,7 @@ Preview mode does not change your live site. When the tag works, click **Submit*
 
 ## Add your app version
 
-`data-release` puts the version of your app on every event. You can set it from a GTM variable.
+`release` puts the version of your app on every event. You can set it from a GTM variable.
 
 1. Make the version available to GTM. For example, your site can push it to the data layer **before** the GTM container snippet:
 
@@ -96,14 +108,18 @@ Preview mode does not change your live site. When the tag works, click **Submit*
    ```
 
 2. In GTM, click **Variables → New**. Select **Data Layer Variable**. Set **Data Layer Variable Name** to `appVersion`. Name the variable `App Version` and save it. A **Constant** variable also works if you change it by hand for each release.
-3. Open the `Sequential` tag. Add `data-release="{{App Version}}"` to the second `<script>` tag:
+3. Open the `Sequential` tag. Add `release: "{{App Version}}"` to `window.sequentialConfig`:
 
    ```html
-   <script async src="https://cdn.usesequential.com/sdk/sequential/v1/sequential.js"
-           data-key="sq_sequential_..."
-           data-api="https://api.usesequential.com"
-           data-release="{{App Version}}"></script>
+   <script>
+   window.sequentialConfig = {
+     key: "sq_sequential_...",
+     api: "https://api.usesequential.com",
+     release: "{{App Version}}"
+   };
    ```
+
+   Keep the rest of the snippet as it is.
 
 4. Save the tag and check it in Preview mode.
 
@@ -172,11 +188,11 @@ The browser remembers `optOut()`. So when the visitor accepts again, the `Sequen
 4. Open **Advanced Settings → Tag Sequencing**. Select **Fire a tag before Sequential opt in fires**, and select the `Sequential` tag. The first block of the snippet then exists when `optIn()` is called, and the SDK runs the call when it loads.
 5. Save the tag.
 
-Check this in Preview mode: accept, withdraw, reload, then accept again. Both tags must be under **Tags Fired**, and requests must go to your `data-api` host again.
+Check this in Preview mode: accept, withdraw, reload, then accept again. Both tags must be under **Tags Fired**, and requests must go to your API host again.
 
 A session replay recording that `optOut()` stopped stays stopped on that page. Recording starts again on the next page load after `optIn()`.
 
-There is also a `data-opt-out` attribute. With it, the SDK starts each page load opted out, and your site must call `sequential.optIn()` on each page load after consent. If you control consent with the GTM trigger, you do not need it. See [Troubleshooting](https://www.usesequential.com/docs/troubleshooting).
+The snippet in your site HTML can also have a `data-opt-out` attribute, which starts each page load opted out. `window.sequentialConfig` has no setting for it, so in GTM you control consent with the trigger, as above. See [Troubleshooting](https://www.usesequential.com/docs/troubleshooting).
 
 This page is not legal advice. Ask your own adviser which consent your site needs. To learn what Sequential records, see [Privacy features](https://www.usesequential.com/privacy-features).
 
@@ -184,8 +200,8 @@ This page is not legal advice. Ask your own adviser which consent your site need
 
 If your site sends a `Content-Security-Policy` header:
 
-- `script-src` must allow `https://cdn.usesequential.com` (the SDK, and the recording library that session replay uses) and your `data-api` host (the session replay recorder loads from it).
-- `connect-src` must allow your `data-api` host (the events).
+- `script-src` must allow `https://cdn.usesequential.com` (the SDK, and the recording library that session replay uses) and your API host (the session replay recorder loads from it).
+- `connect-src` must allow your API host (the events).
 - GTM runs the first `<script>` block of the snippet as an inline script. Your policy must allow the inline scripts of GTM. Read the GTM documentation about CSP.
 
 The **Content-Security-Policy** section of [Sequential SDK](https://www.usesequential.com/docs/sequential) lists the same hosts.
@@ -195,8 +211,8 @@ The **Content-Security-Policy** section of [Sequential SDK](https://www.useseque
 | You see | Cause | Fix |
 |---|---|---|
 | The tag is under **Tags Not Fired** | The trigger did not fire. | Examine the trigger in Preview mode. With a consent trigger, accept first. |
-| `[sequential] the script tag has no data-key` | The `data-key` attribute is missing or empty. | Copy the snippet from **Setup** again. |
-| A missing `data-api` line in the console | The `data-api` attribute is missing. | Copy the snippet from **Setup** again. |
+| `[sequential] the script tag has no data-key` | The SDK did not get its settings. The snippet from **Setup** was pasted unchanged (GTM drops its `data-key`), or `window.sequentialConfig` is missing or below the SDK's `<script>` tag. | Use the [snippet for GTM](#the-snippet-for-gtm). |
+| `[sequential] window.sequentialConfig…` lines | The `key` or `api` value is not correct. | Copy the `data-key` and `data-api` values from **Setup** again. |
 | Some events arrive two times | The SDK loaded two times on the page. | Set **Once per page**. Remove the snippet from your site HTML if GTM also adds it. |
 | No events after `optOut()`, also after the visitor accepts again | The browser remembers `optOut()`. | Add the `Sequential opt in` tag. See [When the visitor accepts again](#when-the-visitor-accepts-again). |
 | Other statuses in **Network** | See [Check your install](https://www.usesequential.com/docs/verify). | |
