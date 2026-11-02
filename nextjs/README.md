@@ -34,6 +34,8 @@ If your project limits the websites that can send events, add `http://localhost:
 
 These values are read at build time. After you change one, build or deploy again.
 
+To see if a fix worked, record each production deploy as a release in Sequential. The [Sequential release](https://github.com/marketplace/actions/sequential-release) GitHub Action has a recipe for Vercel deployments. It records the deployment's full commit SHA as the version, which is the release that this example sends by default. See [Cases and fixes](https://www.usesequential.com/docs/findings).
+
 ## How it works
 
 All of the Sequential code is in [`app/sequential.tsx`](app/sequential.tsx). The root layout renders `<SequentialAnalytics />` once, and every page gets it.
